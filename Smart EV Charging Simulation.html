@@ -1,0 +1,2669 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>EV Charging Station Management</title>
+    <style>
+        :root {
+            --bg-main: #07130f;
+            --bg-panel: rgba(18, 34, 28, 0.96);
+            --bg-card: rgba(23, 45, 37, 0.96);
+            --bg-soft: rgba(35, 65, 54, 0.72);
+            --border: rgba(145, 230, 178, 0.26);
+            --text-main: #f4fff7;
+            --text-soft: #c5decf;
+            --text-muted: #91ad9d;
+            --primary: #42df86;
+            --primary-dark: #1ea963;
+            --accent: #76d6ff;
+            --warning: #ffd166;
+            --danger: #ff7373;
+            --shadow: 0 18px 44px rgba(0, 0, 0, 0.32);
+        }
+
+        * {
+            box-sizing: border-box;
+        }
+
+        html,
+        body {
+            min-height: 100%;
+            background: #07130f;
+        }
+
+        body {
+            margin: 0;
+            min-height: 100vh;
+            overflow-x: hidden;
+            font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+            color: var(--text-main);
+            background:
+                radial-gradient(circle at 50% -20%, rgba(66, 223, 134, 0.28), transparent 40%),
+                radial-gradient(circle at bottom right, rgba(118, 214, 255, 0.16), transparent 28%),
+                linear-gradient(135deg, #07130f 0%, #10241d 54%, #142d24 100%);
+        }
+
+        .page {
+    width: 100%;   /* instead of min(...) */
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 80px 0 40px;
+}
+
+        .hero {
+            display: grid;
+            grid-template-columns: 1.4fr 1fr;
+            gap: 24px;
+            margin-bottom: 24px;
+            align-items: stretch;
+        }
+
+        .hero-card,
+        .summary-card,
+        .form-card,
+        .live-card,
+        .table-card {
+            position: relative;
+            overflow: hidden;
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            background: var(--bg-panel);
+            box-shadow: var(--shadow);
+        }
+
+        .hero-card::before,
+        .summary-card::before,
+        .form-card::before,
+        .live-card::before,
+        .table-card::before {
+            content: "";
+            position: absolute;
+            inset: 0;
+            background: linear-gradient(135deg, rgba(118, 214, 255, 0.08), transparent 42%);
+            pointer-events: none;
+        }
+
+        .hero-card,
+        .summary-card,
+        .form-card,
+        .live-card,
+        .table-card {
+            animation: floatUp 0.65s ease;
+        }
+
+        .hero-card {
+            padding: clamp(34px, 5vw, 58px);
+        }
+
+        #dashboardPage .hero-card {
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            min-height: 100%;
+            padding: clamp(28px, 4vw, 44px);
+        }
+
+        #dashboardPage .hero-card h1 {
+            max-width: 720px;
+            font-size: clamp(2rem, 3.35vw, 3.15rem);
+        }
+
+        #dashboardPage .hero-text {
+            max-width: 760px;
+        }
+
+        .tag {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 8px 14px;
+            border-radius: 999px;
+            background: rgba(66, 223, 134, 0.18);
+            color: #b9ffd5;
+            font-size: 0.84rem;
+            font-weight: 800;
+            letter-spacing: 0.04em;
+            text-transform: uppercase;
+        }
+
+        h1,
+        h2,
+        h3,
+        p {
+            margin-top: 0;
+        }
+
+        h1 {
+            margin: 18px 0 14px;
+            font-size: clamp(2.1rem, 4vw, 3.6rem);
+            line-height: 1.06;
+            overflow-wrap: break-word;
+        }
+
+        h2 {
+            margin-bottom: 6px;
+            font-size: 1.55rem;
+        }
+
+        .hero-text {
+            max-width: 650px;
+            color: var(--text-soft);
+            line-height: 1.7;
+            font-size: 1rem;
+        }
+
+        .hero-points {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin-top: 20px;
+            align-items: flex-start;
+        }
+
+        .hero-points span {
+            display: inline-flex;
+            align-items: center;
+            min-height: 38px;
+            padding: 8px 14px;
+            border-radius: 8px;
+            background: rgba(255, 255, 255, 0.07);
+            color: #e5fff0;
+            border: 1px solid rgba(145, 230, 178, 0.18);
+            line-height: 1.2;
+        }
+
+        .summary-card {
+            padding: 24px;
+        }
+
+        .summary-title {
+            color: var(--text-soft);
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+            font-size: 0.8rem;
+            margin-bottom: 18px;
+        }
+
+        .metric {
+            padding: 18px;
+            margin-bottom: 14px;
+            border-radius: 8px;
+            background: var(--bg-soft);
+            border: 1px solid rgba(145, 230, 178, 0.18);
+            transition: transform 0.3s ease, border-color 0.3s ease;
+        }
+
+        .metric:last-child {
+            margin-bottom: 0;
+        }
+
+        .metric:hover {
+            transform: translateY(-3px);
+            border-color: rgba(118, 214, 255, 0.34);
+        }
+
+        .metric-label {
+            color: var(--text-soft);
+            font-size: 0.9rem;
+        }
+
+        .metric-value {
+            display: block;
+            margin-top: 8px;
+            font-size: 1.8rem;
+            font-weight: 800;
+        }
+
+        .main-grid {
+            display: grid;
+            grid-template-columns: 1.05fr 0.95fr;
+            gap: 24px;
+            margin-bottom: 24px;
+        }
+
+        .form-card,
+        .live-card,
+        .table-card {
+            padding: clamp(28px, 4vw, 46px);
+        }
+
+        .section-heading {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 20px;
+        }
+
+        .section-heading p {
+            margin: 6px 0 0;
+            color: var(--text-soft);
+            font-size: 0.95rem;
+        }
+
+        .grid-two {
+            display: grid;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            gap: 16px;
+        }
+
+        .field {
+            margin-bottom: 16px;
+        }
+
+        .field label {
+            display: block;
+            margin-bottom: 8px;
+            font-size: 0.95rem;
+            font-weight: 700;
+            color: #e1ffeb;
+        }
+
+        .field input,
+        .field select {
+            width: 100%;
+            padding: 14px 15px;
+            border: 1px solid rgba(145, 230, 178, 0.24);
+            border-radius: 8px;
+            background: rgba(7, 17, 13, 0.88);
+            color: var(--text-main);
+            outline: none;
+            transition: border-color 0.25s ease, box-shadow 0.25s ease, transform 0.25s ease;
+        }
+
+        .field input::placeholder {
+            color: #7f998a;
+        }
+
+        .field input:focus,
+        .field select:focus {
+            border-color: rgba(118, 214, 255, 0.78);
+            box-shadow: 0 0 0 4px rgba(118, 214, 255, 0.15);
+            transform: translateY(-1px);
+        }
+
+        .pricing-preview {
+            display: grid;
+            grid-template-columns: repeat(4, minmax(0, 1fr));
+            gap: 14px;
+            margin: 18px 0 22px;
+        }
+
+        .price-box {
+            padding: 16px;
+            border-radius: 8px;
+            background: linear-gradient(180deg, rgba(23, 45, 37, 0.98), rgba(12, 25, 20, 0.96));
+            border: 1px solid rgba(145, 230, 178, 0.16);
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+
+        .price-box:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 14px 30px rgba(0, 0, 0, 0.24);
+        }
+
+        .price-label {
+            color: var(--text-soft);
+            font-size: 0.8rem;
+            text-transform: uppercase;
+            letter-spacing: 0.04em;
+        }
+
+        .price-value {
+            display: block;
+            margin-top: 10px;
+            font-size: 1.45rem;
+            font-weight: 800;
+        }
+
+        .mode-options {
+            display: grid;
+            grid-template-columns: repeat(3, minmax(0, 1fr));
+            gap: 10px;
+            margin-bottom: 18px;
+        }
+
+        .mode-option {
+            position: relative;
+            display: block;
+        }
+
+        .mode-option input {
+            position: absolute;
+            opacity: 0;
+            pointer-events: none;
+        }
+
+        .mode-option span {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 52px;
+            padding: 10px 12px;
+            border: 1px solid rgba(145, 230, 178, 0.2);
+            border-radius: 8px;
+            color: var(--text-soft);
+            background: rgba(255, 255, 255, 0.05);
+            text-align: center;
+            cursor: pointer;
+            transition: background 0.25s ease, border-color 0.25s ease, color 0.25s ease;
+        }
+
+        .mode-option strong {
+            display: block;
+            color: var(--text-main);
+        }
+
+        .mode-option input:checked + span {
+            color: #052413;
+            border-color: transparent;
+            background: linear-gradient(135deg, var(--primary), #a2f5c1);
+        }
+
+        .mode-option input:checked + span strong {
+            color: #052413;
+        }
+
+        .actions,
+        .table-actions {
+            display: flex;
+            gap: 12px;
+            flex-wrap: wrap;
+        }
+
+        .btn {
+            border: none;
+            border-radius: 8px;
+            padding: 14px 18px;
+            font-size: 0.98rem;
+            font-weight: 800;
+            cursor: pointer;
+            transition: transform 0.25s ease, box-shadow 0.25s ease, background 0.25s ease, opacity 0.25s ease;
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+        }
+
+        .btn-primary {
+            color: #052413;
+            background: linear-gradient(135deg, var(--primary), #a2f5c1);
+            box-shadow: 0 14px 30px rgba(66, 223, 134, 0.24);
+        }
+
+        .btn-secondary {
+            color: var(--text-main);
+            background: rgba(255, 255, 255, 0.07);
+            border: 1px solid rgba(145, 230, 178, 0.18);
+        }
+
+        .btn-danger {
+            color: #ffecec;
+            background: rgba(255, 115, 115, 0.18);
+            border: 1px solid rgba(255, 115, 115, 0.3);
+        }
+
+        .btn.hidden {
+            display: none;
+        }
+
+        .live-status {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 12px;
+            padding: 16px 18px;
+            border-radius: 8px;
+            background: rgba(255, 255, 255, 0.06);
+            margin-bottom: 18px;
+            border: 1px solid rgba(145, 230, 178, 0.16);
+        }
+
+        .badge {
+            flex: none;
+            padding: 8px 14px;
+            border-radius: 999px;
+            background: rgba(255, 209, 102, 0.16);
+            color: var(--warning);
+            font-weight: 800;
+        }
+
+        .charging-details {
+            display: grid;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            gap: 14px;
+            margin-bottom: 20px;
+        }
+
+        .detail-card {
+            padding: 16px;
+            border-radius: 8px;
+            background: rgba(255, 255, 255, 0.06);
+            border: 1px solid rgba(145, 230, 178, 0.16);
+        }
+
+        .detail-card span {
+            color: var(--text-soft);
+            font-size: 0.84rem;
+        }
+
+        .detail-card strong {
+            display: block;
+            margin-top: 8px;
+            font-size: 1.05rem;
+            word-break: break-word;
+        }
+
+        .progress-area {
+            padding: 18px;
+            border-radius: 8px;
+            background: rgba(4, 10, 8, 0.65);
+            border: 1px solid rgba(145, 230, 178, 0.16);
+        }
+
+        .progress-head {
+            display: flex;
+            justify-content: space-between;
+            gap: 12px;
+            margin-bottom: 12px;
+            color: var(--text-soft);
+        }
+
+        .progress-track {
+            width: 100%;
+            height: 18px;
+            overflow: hidden;
+            border-radius: 999px;
+            background: rgba(255, 255, 255, 0.12);
+        }
+
+        .progress-fill {
+            width: 0%;
+            height: 100%;
+            border-radius: inherit;
+            background: linear-gradient(90deg, var(--primary-dark), var(--accent));
+            box-shadow: 0 0 24px rgba(66, 223, 134, 0.4);
+            transition: width 0.35s linear;
+        }
+
+        .status-message {
+            margin-top: 14px;
+            font-size: 1rem;
+            font-weight: 700;
+            color: #e0ffea;
+        }
+
+        .search-field {
+            min-width: min(100%, 300px);
+            margin-bottom: 0;
+        }
+
+        .table-wrap {
+            overflow-x: auto;
+            border-radius: 8px;
+            border: 1px solid rgba(145, 230, 178, 0.18);
+        }
+
+        .scroll-hint {
+            display: none;
+            margin: -6px 0 10px;
+            color: var(--text-muted);
+            font-size: 0.86rem;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            min-width: 860px;
+            background: rgba(8, 17, 13, 0.72);
+        }
+
+        th,
+        td {
+            padding: 15px 14px;
+            text-align: left;
+            border-bottom: 1px solid rgba(145, 230, 178, 0.14);
+        }
+
+        th {
+            background: rgba(66, 223, 134, 0.13);
+            color: #e4ffed;
+            font-size: 0.86rem;
+            text-transform: uppercase;
+            letter-spacing: 0.04em;
+        }
+
+        td {
+            color: #f0fff5;
+        }
+
+        tbody tr {
+            transition: background 0.25s ease;
+        }
+
+        tbody tr:hover {
+            background: rgba(255, 255, 255, 0.04);
+        }
+
+        .table-status {
+            display: inline-flex;
+            padding: 6px 10px;
+            border-radius: 999px;
+            font-size: 0.82rem;
+            font-weight: 800;
+            background: rgba(118, 214, 255, 0.14);
+            color: #b8ecff;
+        }
+
+        .delete-btn {
+            padding: 10px 14px;
+            border: none;
+            border-radius: 8px;
+            background: rgba(255, 115, 115, 0.16);
+            color: #ffd3d3;
+            cursor: pointer;
+            font-weight: 800;
+            transition: transform 0.25s ease, background 0.25s ease;
+        }
+
+        .delete-btn:hover {
+            transform: translateY(-2px);
+            background: rgba(255, 115, 115, 0.24);
+        }
+
+        .empty-state {
+            padding: 26px;
+            text-align: center;
+            color: var(--text-soft);
+        }
+
+        .flash {
+            position: fixed;
+            top: 72px;
+            right: 18px;
+            z-index: 500;
+            min-width: 240px;
+            max-width: 340px;
+            padding: 14px 16px;
+            border-radius: 8px;
+            background: rgba(15, 32, 24, 0.98);
+            border: 1px solid rgba(145, 230, 178, 0.24);
+            color: #e7fff0;
+            box-shadow: 0 18px 35px rgba(0, 0, 0, 0.3);
+            animation: slideIn 0.35s ease;
+        }
+
+        .flash.hidden,
+        .hidden {
+            display: none;
+        }
+
+        .app-nav {
+    position: fixed;
+    top: 10px;
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 100;
+    width: calc(100% - 20px);
+    max-width: 1200px;
+
+    display: flex;
+    gap: 10px;
+    flex-wrap: nowrap;
+    justify-content: center;
+    overflow-x: auto;
+
+    padding: 12px;
+    min-height: 44px;
+
+    border: 1px solid rgba(145, 230, 178, 0.18);
+    border-radius: 8px;
+    background: rgba(9, 22, 17, 0.98);
+}
+
+        .portal-nav {
+            display: grid;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            gap: 14px;
+            margin-bottom: 14px;
+        }
+
+    .landing {
+    padding-top: 20px;   /* reduced top space */
+    display: flex;       /* 🔥 change from grid → flex */
+    flex-direction: column;
+    gap: 14px;
+    max-width: 100%;
+}
+        .landing-card {
+            padding: clamp(34px, 5vw, 62px);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            background: var(--bg-panel);
+            box-shadow: var(--shadow);
+            text-align: center;
+            max-width: 100%;
+            min-width: 0;
+            background:
+                radial-gradient(circle at 50% 0%, rgba(66, 223, 134, 0.14), transparent 38%),
+                linear-gradient(180deg, rgba(18, 34, 28, 0.98), rgba(12, 25, 20, 0.96));
+        }
+
+        .landing-card h1 {
+            margin-left: auto;
+            margin-right: auto;
+            max-width: 880px;
+        }
+
+        .landing-card .hero-text {
+            margin-left: auto;
+            margin-right: auto;
+        }
+
+        .portal-choice {
+            display: grid;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            gap: 14px;
+            max-width: 100%;
+        }
+
+        .portal-card {
+            width: 100%;
+            min-width: 0;
+            min-height: 170px;
+            padding: 28px;
+            border: 1px solid rgba(145, 230, 178, 0.24);
+            border-radius: 8px;
+            color: var(--text-main);
+            background:
+                linear-gradient(135deg, rgba(66, 223, 134, 0.12), transparent 42%),
+                rgba(255, 255, 255, 0.06);
+            text-align: left;
+            cursor: pointer;
+            box-shadow: 0 14px 34px rgba(0, 0, 0, 0.18);
+            transition: transform 0.25s ease, background 0.25s ease, border-color 0.25s ease, box-shadow 0.25s ease;
+        }
+
+        .portal-card:hover {
+            transform: translateY(-4px);
+            border-color: rgba(66, 223, 134, 0.55);
+            background: rgba(66, 223, 134, 0.12);
+            box-shadow: 0 18px 42px rgba(0, 0, 0, 0.24);
+        }
+
+        .portal-card strong {
+            display: block;
+            margin-bottom: 12px;
+            font-size: 1.55rem;
+        }
+
+        .portal-card span {
+            display: block;
+            color: var(--text-soft);
+            line-height: 1.6;
+            max-width: 100%;
+            overflow-wrap: anywhere;
+        }
+
+        .nav-btn {
+            border: 1px solid rgba(145, 230, 178, 0.18);
+            border-radius: 8px;
+            padding: 11px 15px;
+            color: var(--text-main);
+            background: rgba(255, 255, 255, 0.06);
+            font-weight: 800;
+            cursor: pointer;
+            transition: background 0.25s ease, color 0.25s ease, transform 0.25s ease;
+            flex: 0 0 auto;
+        }
+
+        .nav-btn:hover {
+            transform: translateY(-2px);
+            background: rgba(255, 255, 255, 0.1);
+        }
+
+        .nav-btn.active {
+            color: #052413;
+            background: linear-gradient(135deg, var(--primary), #a2f5c1);
+        }
+
+        .portal-nav.hidden,
+        .app-nav.hidden {
+            display: none;
+        }
+
+        .view {
+            display: none;
+        }
+
+        .view.active {
+    display: block;
+}
+
+#landingPage.active {
+    display: block !important;
+}
+        .view > .form-card,
+        .view > .live-card {
+            max-width: 1020px;
+            margin: 0 auto;
+        }
+
+        .view > .table-card {
+            max-width: 1200px;
+            margin: 0 auto;
+            min-height: calc(100vh - 210px);
+        }
+
+        .view.active .hero {
+            align-items: stretch;
+        }
+
+        .view.active .hero-card,
+        .view.active .summary-card {
+            display: block;
+        }
+
+        #dashboardPage.active .hero-card {
+            display: flex;
+        }
+
+        .view.active .form-card,
+        .view.active .live-card,
+        .view.active .table-card {
+            display: grid;
+            align-content: start;
+        }
+
+        .bill-grid {
+            display: grid;
+            grid-template-columns: 1.1fr 0.9fr;
+            gap: 20px;
+        }
+
+        .bill-list {
+            display: grid;
+            gap: 12px;
+        }
+
+        .bill-row {
+            display: flex;
+            justify-content: space-between;
+            gap: 16px;
+            padding: 14px 16px;
+            border: 1px solid rgba(145, 230, 178, 0.16);
+            border-radius: 8px;
+            background: rgba(255, 255, 255, 0.05);
+        }
+
+        .bill-row span {
+            color: var(--text-soft);
+        }
+
+        .bill-row strong {
+            text-align: right;
+        }
+
+        .bill-total {
+            border-color: rgba(66, 223, 134, 0.42);
+            background: rgba(66, 223, 134, 0.12);
+        }
+
+        .qr-panel {
+            display: grid;
+            align-content: start;
+            gap: 14px;
+            padding: 18px;
+            border: 1px solid rgba(145, 230, 178, 0.18);
+            border-radius: 8px;
+            background: rgba(255, 255, 255, 0.05);
+        }
+
+        .qr-code {
+            display: grid;
+            grid-template-columns: repeat(9, 1fr);
+            gap: 4px;
+            width: min(100%, 230px);
+            aspect-ratio: 1;
+            padding: 14px;
+            border-radius: 8px;
+            background: #f6fff8;
+        }
+
+        .qr-code span {
+            border-radius: 2px;
+            background: #0b1712;
+        }
+
+        .qr-code span:nth-child(2n),
+        .qr-code span:nth-child(5n),
+        .qr-code span:nth-child(7n + 1) {
+            background: transparent;
+        }
+
+        .payment-note {
+            color: var(--text-soft);
+            line-height: 1.6;
+        }
+
+        .modal {
+            position: fixed;
+            inset: 0;
+            z-index: 30;
+            display: grid;
+            place-items: center;
+            padding: 18px;
+            background: rgba(0, 0, 0, 0.58);
+        }
+
+        .modal.hidden {
+            display: none;
+        }
+
+        .modal-card {
+            width: min(440px, 100%);
+            padding: 26px;
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            background: var(--bg-panel);
+            box-shadow: var(--shadow);
+        }
+
+        .password-wrap {
+            display: grid;
+            grid-template-columns: 1fr auto;
+            gap: 10px;
+        }
+
+        .phone-input {
+            display: flex;
+            align-items: center;
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            background: rgba(255, 255, 255, 0.08);
+            transition: border-color 0.25s ease, box-shadow 0.25s ease, transform 0.25s ease;
+        }
+
+        .phone-input:focus-within {
+            transform: translateY(-1px);
+            border-color: rgba(66, 223, 134, 0.58);
+            box-shadow: 0 0 0 4px rgba(66, 223, 134, 0.1);
+        }
+
+        .phone-prefix {
+            padding-left: 15px;
+            color: var(--text-main);
+            font-weight: 800;
+        }
+
+        .phone-input input {
+            border: 0;
+            background: transparent;
+            box-shadow: none;
+        }
+
+        .phone-input input:focus {
+            transform: none;
+            box-shadow: none;
+        }
+
+        .icon-btn {
+            width: 48px;
+            border: 1px solid rgba(145, 230, 178, 0.24);
+            border-radius: 8px;
+            color: var(--text-main);
+            background: rgba(255, 255, 255, 0.07);
+            cursor: pointer;
+        }
+
+        .icon-btn svg {
+            display: block;
+            margin: auto;
+        }
+
+        .admin-settings-grid {
+            display: grid;
+            grid-template-columns: repeat(3, minmax(0, 1fr));
+            gap: 16px;
+            margin-bottom: 20px;
+        }
+
+        @keyframes floatUp {
+            from {
+                opacity: 0;
+                transform: translateY(22px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateX(18px) translateY(-10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateX(0) translateY(0);
+            }
+        }
+
+        @media (max-width: 980px) {
+            .hero,
+            .main-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .pricing-preview {
+                grid-template-columns: repeat(2, minmax(0, 1fr));
+            }
+        }
+
+        @media (max-width: 720px) {
+            .page {
+                width: calc(100% - 20px);
+                padding-top: 80px;
+            }
+
+            .hero-card,
+            .summary-card,
+            .form-card,
+            .live-card,
+            .table-card {
+                padding: 20px;
+            }
+
+            .landing-card,
+            .portal-card {
+                padding: 24px;
+            }
+
+            .landing-card h1 {
+                font-size: 1.9rem;
+                line-height: 1.12;
+                max-width: 310px;
+            }
+
+            .portal-card span {
+                max-width: 300px;
+            }
+
+            .grid-two,
+            .pricing-preview,
+            .charging-details,
+            .mode-options,
+            .portal-choice,
+            .admin-settings-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .section-heading,
+            .live-status,
+            .progress-head {
+                flex-direction: column;
+                align-items: flex-start;
+            }
+
+            .actions,
+            .table-actions,
+            .bill-grid {
+                flex-direction: column;
+            }
+
+            .bill-grid {
+                display: grid;
+                grid-template-columns: 1fr;
+            }
+
+            .btn,
+            .search-field {
+                width: 100%;
+            }
+
+            .app-nav {
+                justify-content: flex-start;
+            }
+
+            .app-nav .nav-btn {
+                width: auto;
+                white-space: nowrap;
+            }
+
+            .scroll-hint {
+                display: block;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div id="flashMessage" class="flash hidden"></div>
+    <div id="adminPasswordModal" class="modal hidden" role="dialog" aria-modal="true" aria-labelledby="adminPasswordTitle">
+        <div class="modal-card">
+            <h2 id="adminPasswordTitle">Admin Login</h2>
+            <p class="hero-text">Enter the admin password to unlock dashboard, history, and station settings.</p>
+            <div class="field">
+                <label for="adminPasswordInput">Password</label>
+                <div class="password-wrap">
+                    <input type="password" id="adminPasswordInput" placeholder="Enter admin password">
+                    <button type="button" id="toggleAdminPasswordBtn" class="icon-btn" aria-label="Show password">
+                        <svg width="22" height="22" viewBox="0 0 24 24" aria-hidden="true">
+                            <path d="M2 12s3.5-6 10-6 10 6 10 6-3.5 6-10 6S2 12 2 12Z" fill="none" stroke="currentColor" stroke-width="2"/>
+                            <circle cx="12" cy="12" r="3" fill="none" stroke="currentColor" stroke-width="2"/>
+                        </svg>
+                    </button>
+                </div>
+            </div>
+            <div class="actions">
+                <button type="button" id="confirmAdminPasswordBtn" class="btn btn-primary">Unlock Admin</button>
+                <button type="button" id="cancelAdminPasswordBtn" class="btn btn-secondary">Cancel</button>
+            </div>
+        </div>
+    </div>
+
+<main class="page">
+    <section id="landingPage" class="landing view active">
+        <article class="landing-card">
+            <span class="tag">Smart EV Station</span>
+            <h1>Smart EV Charging Simulation System</h1>
+            <p class="hero-text">Select your portal to continue.</p>
+        </article>
+        <div class="portal-choice">
+            <button class="portal-card" id="customerPortalBtn" type="button">
+                <strong>Customer Portal</strong>
+                <span>Start charging, track live progress, and view your payment summary.</span>
+            </button>
+            <button class="portal-card" id="adminPortalBtn" type="button">
+                <strong>Admin Portal</strong>
+                <span>Open station dashboard, session history, pricing, and charger settings.</span>
+            </button>
+        </div>
+    </section>
+
+        <nav class="app-nav hidden" aria-label="Main pages">
+<button class="nav-btn" id="backToHomeBtn" data-portal="both">← Back</button>
+            <button class="nav-btn active" type="button" data-page="startPage" data-portal="customer">Start Session</button>
+            <button class="nav-btn" type="button" data-page="livePage" data-portal="customer">Live Status</button>
+            <button class="nav-btn" type="button" data-page="paymentPage" data-portal="customer">Payment Summary</button>
+            <button class="nav-btn hidden" type="button" data-page="dashboardPage" data-portal="admin">Dashboard</button>
+            <button class="nav-btn hidden" type="button" data-page="settingsPage" data-portal="admin">Settings</button>
+            <button class="nav-btn hidden" type="button" data-page="historyPage" data-portal="admin">History</button>
+        </nav>
+
+        <section id="dashboardPage" class="view">
+            <div class="hero">
+                <article class="hero-card">
+                    <span class="tag">EV Station Dashboard</span>
+                    <h1>EV Charging Station Management Website</h1>
+                    <p class="hero-text">
+                        Manage customer charging sessions, calculate live pricing, track realistic charging states,
+                        and keep session history saved in the browser.
+                    </p>
+                    <div class="hero-points">
+                        <span>Live Billing</span>
+                        <span>Refresh Safe Timer</span>
+                        <span>Session History</span>
+                        <span>Idle Fee Alert</span>
+                    </div>
+                </article>
+
+                <aside class="summary-card">
+                    <div class="summary-title">Station Summary</div>
+                    <div class="metric">
+                        <span class="metric-label">Total Sessions</span>
+                        <strong id="totalSessions" class="metric-value">0</strong>
+                    </div>
+                    <div class="metric">
+                        <span class="metric-label">Total Revenue</span>
+                        <strong id="totalRevenue" class="metric-value">Rs 0</strong>
+                    </div>
+                    <div class="metric">
+                        <span class="metric-label">Current Status</span>
+                        <strong id="stationStatus" class="metric-value" style="font-size: 1.3rem;">Ready</strong>
+                    </div>
+                    <div class="metric">
+                        <span class="metric-label">Total Units Used</span>
+                        <strong id="totalUnitsUsed" class="metric-value">0 kWh</strong>
+                    </div>
+                    <div class="metric">
+                        <span class="metric-label">Total Charger Usage</span>
+                        <strong id="totalChargerTime" class="metric-value" style="font-size: 1.3rem;">0 sec</strong>
+                    </div>
+                    <div class="metric">
+                        <span class="metric-label">Idle Fees</span>
+                        <strong id="totalIdleFees" class="metric-value">Rs 0</strong>
+                    </div>
+                </aside>
+            </div>
+        </section>
+
+        <section id="startPage" class="view">
+            <article class="form-card">
+                <div class="section-heading">
+                    <div>
+                        <h2>Start New Charging Session</h2>
+                        <p>Enter customer and vehicle details. Price and charging time update automatically.</p>
+                    </div>
+                </div>
+
+                <form id="chargingForm">
+                    <div class="grid-two">
+                        <div class="field">
+                            <label for="customerName">Customer Name</label>
+                            <input type="text" id="customerName" placeholder="Enter customer name" required>
+                        </div>
+                        <div class="field">
+                            <label for="contactNumber">Contact Number</label>
+                            <div class="phone-input">
+                                <span class="phone-prefix">+91</span>
+                                <input type="tel" id="contactNumber" placeholder="XXXXXXXXXX" maxlength="10" required>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="grid-two">
+                        <div class="field">
+                            <label for="vehicleNumber">Vehicle Number</label>
+                            <input type="text" id="vehicleNumber" placeholder="Example: GJ18YP0708" maxlength="10" required>
+                        </div>
+                    </div>
+
+                    <div class="grid-two">
+                        <div class="field">
+                            <label for="chargerType">Charger Type</label>
+                            <select id="chargerType" required>
+                                <option value="AC Slow">AC Slow</option>
+                                <option value="DC Fast">DC Fast</option>
+                                <option value="Super Fast">Super Fast</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="mode-options" aria-label="Charging mode">
+                        <label class="mode-option">
+                            <input type="radio" name="chargeMode" value="time" checked>
+                            <span><strong>By Time</strong></span>
+                        </label>
+                        <label class="mode-option">
+                            <input type="radio" name="chargeMode" value="units">
+                            <span><strong>By Units</strong></span>
+                        </label>
+                        <label class="mode-option">
+                            <input type="radio" name="chargeMode" value="amount">
+                            <span><strong>By Rupees</strong></span>
+                        </label>
+                    </div>
+
+                <div class="grid-two">
+
+    <!-- BY TIME -->
+    <div class="field mode-input" data-mode-input="time">
+        <label>Charging Time</label>
+        <select id="chargeTime">
+            <option value="15">15 minutes</option>
+            <option value="30">30 minutes</option>
+            <option value="60">1 hour</option>
+            <option value="120">2 hours</option>
+            <option value="custom">Custom</option>
+        </select>
+        <input type="number" id="customTime" placeholder="Enter minutes" class="hidden" min="1">
+    </div>
+
+    <!-- BY UNITS -->
+    <div class="field mode-input hidden" data-mode-input="units">
+        <label>Units</label>
+        <select id="unitsSelect">
+            <option value="5">5 kWh</option>
+            <option value="10">10 kWh</option>
+            <option value="20">20 kWh</option>
+            <option value="30">30 kWh</option>
+            <option value="custom">Custom</option>
+        </select>
+        <input type="number" id="units" class="hidden" min="1" placeholder="Enter units">
+    </div>
+
+    <!-- BY AMOUNT -->
+    <div class="field mode-input hidden" data-mode-input="amount">
+        <label>Amount (Rs)</label>
+        <select id="amountSelect">
+            <option value="50">Rs 50</option>
+            <option value="100">Rs 100</option>
+            <option value="250">Rs 250</option>
+            <option value="350">Rs 350</option>
+            <option value="400">Rs 400</option>
+            <option value="custom">Custom</option>
+        </select>
+        <input type="number" id="chargeAmount" class="hidden" min="1" placeholder="Enter amount">
+    </div>
+
+</div>
+
+                    <div class="pricing-preview">
+                        <div class="price-box">
+                            <span class="price-label">Units Selected</span>
+                            <strong id="previewUnits" class="price-value">10 kWh</strong>
+                        </div>
+                        <div class="price-box">
+                            <span class="price-label">Price Per Unit</span>
+                            <strong id="previewRate" class="price-value">Rs 8</strong>
+                        </div>
+                        <div class="price-box">
+                            <span class="price-label">Total Cost</span>
+                            <strong id="previewTotal" class="price-value">Rs 80</strong>
+                        </div>
+                        <div class="price-box">
+                            <span class="price-label">Estimated Time</span>
+                            <strong id="previewDuration" class="price-value">30 sec</strong>
+                        </div>
+                    </div>
+
+                    <div class="actions">
+                        <button type="submit" class="btn btn-primary">Start Charging</button>
+                        <button type="button" id="resetBtn" class="btn btn-secondary">Reset Form</button>
+                    </div>
+                </form>
+            </article>
+        </section>
+
+        <section id="livePage" class="view">
+            <article class="live-card">
+                <div class="section-heading">
+                    <div>
+                        <h2>Charging Status</h2>
+                        <p>Progress is calculated from saved start time and duration.</p>
+                    </div>
+                </div>
+
+                <div class="live-status">
+                    <div>
+                        <h3 style="margin-bottom: 6px;">Live Session Status</h3>
+                        <p id="sessionCaption" style="margin: 0; color: var(--text-soft);">No active charging session yet.</p>
+                    </div>
+                    <span id="statusBadge" class="badge">Waiting</span>
+                </div>
+
+                <div class="charging-details">
+                    <div class="detail-card">
+                        <span>Customer</span>
+                        <strong id="liveCustomer">-</strong>
+                    </div>
+                    <div class="detail-card">
+                        <span>Vehicle Number</span>
+                        <strong id="liveVehicle">-</strong>
+                    </div>
+                    <div class="detail-card">
+                        <span>Contact Number</span>
+                        <strong id="liveContact">-</strong>
+                    </div>
+                    <div class="detail-card">
+                        <span>Charger Type</span>
+                        <strong id="liveCharger">-</strong>
+                    </div>
+                    <div class="detail-card">
+                        <span>Current Payable</span>
+                        <strong id="liveCost">Rs 0</strong>
+                    </div>
+                    <div class="detail-card">
+                        <span>Idle Fee Warning</span>
+                        <strong id="liveIdleFee">Rs 3/min after 10 min</strong>
+                    </div>
+                </div>
+
+                <div class="progress-area">
+                    <div class="progress-head">
+                        <span>Charging Progress</span>
+                        <strong id="progressText">0% | 0s left</strong>
+                    </div>
+                    <div class="progress-track">
+                        <div id="progressFill" class="progress-fill"></div>
+                    </div>
+                    <div id="statusMessage" class="status-message">Charging station is ready for the next customer.</div>
+                </div>
+
+                <div class="actions">
+                    <button type="button" id="cancelBtn" class="btn btn-danger hidden">Cancel Charging</button>
+                    <button type="button" id="vehicleMovedBtn" class="btn btn-primary hidden">Vehicle Moved / Final Bill</button>
+                </div>
+            </article>
+        </section>
+
+        <section id="paymentPage" class="view">
+            <article class="form-card">
+                <div class="section-heading">
+                    <div>
+                        <h2>Payment Summary</h2>
+                        <p>Review the latest charging bill and scan the payment QR at the counter.</p>
+                    </div>
+                </div>
+
+                <div class="bill-grid">
+                    <div class="bill-list">
+                        <div class="bill-row">
+                            <span>Customer</span>
+                            <strong id="billCustomer">-</strong>
+                        </div>
+                        <div class="bill-row">
+                            <span>Vehicle Number</span>
+                            <strong id="billVehicle">-</strong>
+                        </div>
+                        <div class="bill-row">
+                            <span>Contact Number</span>
+                            <strong id="billContact">-</strong>
+                        </div>
+                        <div class="bill-row">
+                            <span>Charger Type</span>
+                            <strong id="billCharger">-</strong>
+                        </div>
+                        <div class="bill-row">
+                            <span>Units Charged</span>
+                            <strong id="billUnits">-</strong>
+                        </div>
+                        <div class="bill-row">
+                            <span>Charging Amount</span>
+                            <strong id="billChargingAmount">Rs 0</strong>
+                        </div>
+                        <div class="bill-row">
+                            <span>Idle Fee</span>
+                            <strong id="billIdleFee">Rs 0</strong>
+                        </div>
+                        <div class="bill-row bill-total">
+                            <span>Total Payable</span>
+                            <strong id="billTotal">Rs 0</strong>
+                        </div>
+                    </div>
+
+                    <div class="qr-panel">
+                        <h3 style="margin-bottom: 0;">Payment QR</h3>
+                        <div class="qr-code" aria-label="Payment QR placeholder">
+                            <span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span>
+                            <span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span>
+                            <span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span>
+                            <span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span>
+                            <span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span>
+                            <span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span>
+                            <span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span>
+                            <span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span>
+                            <span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span>
+                        </div>
+                        <p class="payment-note">
+                            This is a payment QR placeholder. A real QR can be generated later using your UPI ID or payment gateway.
+                        </p>
+                    </div>
+                </div>
+            </article>
+        </section>
+
+        <section id="settingsPage" class="view">
+            <article class="form-card">
+                <div class="section-heading">
+                    <div>
+                        <h2>Admin Settings</h2>
+                        <p>Update charger rates and charging speed used by customer sessions.</p>
+                    </div>
+                </div>
+
+                <form id="adminSettingsForm">
+                    <div class="admin-settings-grid">
+                        <div class="field">
+                            <label for="rateAC">AC Slow Rate (Rs/kWh)</label>
+                            <input type="number" id="rateAC" min="1" step="1">
+                        </div>
+                        <div class="field">
+                            <label for="rateDC">DC Fast Rate (Rs/kWh)</label>
+                            <input type="number" id="rateDC" min="1" step="1">
+                        </div>
+                        <div class="field">
+                            <label for="rateSuper">Super Fast Rate (Rs/kWh)</label>
+                            <input type="number" id="rateSuper" min="1" step="1">
+                        </div>
+                    </div>
+
+                    <div class="admin-settings-grid">
+                        <div class="field">
+                            <label for="durationAC">AC Slow Time per kWh (sec)</label>
+                            <input type="number" id="durationAC" min="10" step="5">
+                        </div>
+                        <div class="field">
+                            <label for="durationDC">DC Fast Time per kWh (sec)</label>
+                            <input type="number" id="durationDC" min="10" step="5">
+                        </div>
+                        <div class="field">
+                            <label for="durationSuper">Super Fast Time per kWh (sec)</label>
+                            <input type="number" id="durationSuper" min="10" step="5">
+                        </div>
+                    </div>
+
+                    <div class="admin-settings-grid">
+                        <div class="field">
+                            <label for="idleFeeRate">Idle Fee (Rs/min)</label>
+                            <input type="number" id="idleFeeRate" min="0" step="1">
+                        </div>
+                        <div class="field">
+                            <label for="gracePeriod">Idle Grace Period (min)</label>
+                            <input type="number" id="gracePeriod" min="1" step="1">
+                        </div>
+                    </div>
+
+                    <div class="actions">
+                        <button type="submit" class="btn btn-primary">Save Settings</button>
+                        <button type="button" id="resetSettingsBtn" class="btn btn-secondary">Reset Defaults</button>
+                    </div>
+                </form>
+            </article>
+        </section>
+
+        <section id="historyPage" class="view">
+            <article class="table-card">
+                <div class="section-heading">
+                    <div>
+                        <h2>Session Log Dashboard</h2>
+                        <p>Saved sessions remain available after refresh on this browser.</p>
+                    </div>
+                    <div class="table-actions">
+                        <div class="field search-field">
+                            <label for="searchLog">Search Log</label>
+                            <input type="text" id="searchLog" placeholder="Search by name or vehicle">
+                        </div>
+                    </div>
+                </div>
+
+                <p class="scroll-hint">Swipe horizontally to see all table columns.</p>
+                <div class="table-wrap">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Name</th>
+                                <th>Vehicle No</th>
+                                <th>Contact</th>
+                                <th>Charger Type</th>
+                                <th>Units</th>
+                                <th>Total Cost</th>
+                                <th>Status</th>
+                                <th>Time</th>
+                                <th>Action</th>
+                            </tr>
+                        </thead>
+                        <tbody id="sessionTableBody">
+                            <tr>
+                                <td colspan="9" class="empty-state">No charging sessions yet. Start one from the form above.</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </article>
+        </section>
+    </main>
+
+<script>
+document.addEventListener("DOMContentLoaded", () => {
+        const defaultChargingRates = {
+            "AC Slow": 8,
+            "DC Fast": 12,
+            "Super Fast": 18
+        };
+
+        const defaultChargerDurations = {
+            "AC Slow": 90000,
+            "DC Fast": 45000,
+            "Super Fast": 20000
+        };
+
+        const storageKey = "ev_sessions";
+        const activeSessionKey = "ev_active_session_id";
+        const settingsKey = "ev_admin_settings";
+        const adminPassword = "noneofyourbusiness";
+        let chargingRates = { ...defaultChargingRates };
+        let chargerDurations = { ...defaultChargerDurations };
+        let idleGracePeriod = 10 * 60 * 1000;
+        let idleFeeRate = 3;
+        const vehicleRegex = /^[A-Z]{2}[0-9]{2}[A-Z]{1,2}[0-9]{4}$/;
+        const contactRegex = /^[6-9][0-9]{9}$/;
+        const chargingSessions = loadSessions();
+        let currentSimulation = null;
+        let activeSessionId = localStorage.getItem(activeSessionKey);
+        let flashTimer = null;
+        let almostCompleteNotified = false;
+        let completedNotified = false;
+
+        const chargingForm = document.getElementById("chargingForm");
+        const customerNameInput = document.getElementById("customerName");
+        const contactNumberInput = document.getElementById("contactNumber");
+        const vehicleNumberInput = document.getElementById("vehicleNumber");
+        const chargerTypeInput = document.getElementById("chargerType");
+        const unitsInput = document.getElementById("units");
+        const chargeTimeInput = document.getElementById("chargeTime");
+        const chargeAmountInput = document.getElementById("chargeAmount");
+const customTimeInput = document.getElementById("customTime");
+const unitsSelect = document.getElementById("unitsSelect");
+const amountSelect = document.getElementById("amountSelect");
+        const chargeModeInputs = document.querySelectorAll("input[name='chargeMode']");
+        const modeInputGroups = document.querySelectorAll(".mode-input");
+        const resetBtn = document.getElementById("resetBtn");
+        const cancelBtn = document.getElementById("cancelBtn");
+        const vehicleMovedBtn = document.getElementById("vehicleMovedBtn");
+        const searchLogInput = document.getElementById("searchLog");
+        const adminSettingsForm = document.getElementById("adminSettingsForm");
+        const resetSettingsBtn = document.getElementById("resetSettingsBtn");
+        const rateACInput = document.getElementById("rateAC");
+        const rateDCInput = document.getElementById("rateDC");
+        const rateSuperInput = document.getElementById("rateSuper");
+        const durationACInput = document.getElementById("durationAC");
+        const durationDCInput = document.getElementById("durationDC");
+        const durationSuperInput = document.getElementById("durationSuper");
+        const idleFeeRateInput = document.getElementById("idleFeeRate");
+        const gracePeriodInput = document.getElementById("gracePeriod");
+
+        const previewUnits = document.getElementById("previewUnits");
+        const previewRate = document.getElementById("previewRate");
+        const previewTotal = document.getElementById("previewTotal");
+        const previewDuration = document.getElementById("previewDuration");
+
+        const totalSessions = document.getElementById("totalSessions");
+        const totalRevenue = document.getElementById("totalRevenue");
+        const totalUnitsUsed = document.getElementById("totalUnitsUsed");
+        const totalChargerTime = document.getElementById("totalChargerTime");
+        const totalIdleFees = document.getElementById("totalIdleFees");
+        const stationStatus = document.getElementById("stationStatus");
+        const sessionTableBody = document.getElementById("sessionTableBody");
+        const flashMessage = document.getElementById("flashMessage");
+
+        const statusBadge = document.getElementById("statusBadge");
+        const sessionCaption = document.getElementById("sessionCaption");
+        const liveCustomer = document.getElementById("liveCustomer");
+        const liveVehicle = document.getElementById("liveVehicle");
+        const liveContact = document.getElementById("liveContact");
+        const liveCharger = document.getElementById("liveCharger");
+        const liveCost = document.getElementById("liveCost");
+        const liveIdleFee = document.getElementById("liveIdleFee");
+        const progressFill = document.getElementById("progressFill");
+        const progressText = document.getElementById("progressText");
+        const statusMessage = document.getElementById("statusMessage");
+        const billCustomer = document.getElementById("billCustomer");
+        const billVehicle = document.getElementById("billVehicle");
+        const billContact = document.getElementById("billContact");
+        const billCharger = document.getElementById("billCharger");
+        const billUnits = document.getElementById("billUnits");
+        const billChargingAmount = document.getElementById("billChargingAmount");
+        const billIdleFee = document.getElementById("billIdleFee");
+        const billTotal = document.getElementById("billTotal");
+        const customerPortalBtn = document.getElementById("customerPortalBtn");
+        const adminPortalBtn = document.getElementById("adminPortalBtn");
+        const adminPasswordModal = document.getElementById("adminPasswordModal");
+        const adminPasswordInput = document.getElementById("adminPasswordInput");
+        const toggleAdminPasswordBtn = document.getElementById("toggleAdminPasswordBtn");
+        const confirmAdminPasswordBtn = document.getElementById("confirmAdminPasswordBtn");
+        const cancelAdminPasswordBtn = document.getElementById("cancelAdminPasswordBtn");
+        const appNav = document.querySelector(".app-nav");
+        const navButtons = document.querySelectorAll(".app-nav .nav-btn");
+const views = document.querySelectorAll(".view");
+
+const backToHomeBtn = document.getElementById("backToHomeBtn");
+
+if (backToHomeBtn) {
+    backToHomeBtn.addEventListener("click", () => {
+        showLandingPage();
+    });
+}
+        
+        let adminUnlocked = false;
+
+        function showPage(pageId) {
+            const targetButton = Array.from(navButtons).find((button) => button.dataset.page === pageId);
+
+            if (targetButton && targetButton.dataset.portal === "admin" && !adminUnlocked) {
+                showFlash("Admin password is required.");
+                return;
+            }
+
+            views.forEach((view) => {
+                view.style.display = "";
+                view.classList.toggle("active", view.id === pageId);
+            });
+
+            navButtons.forEach((button) => {
+                button.classList.toggle("active", button.dataset.page === pageId);
+            });
+
+            window.scrollTo({
+                top: 0,
+                behavior: "smooth"
+            });
+        }
+
+        function showLandingPage() {
+            appNav.classList.add("hidden");
+
+            views.forEach((view) => {
+                view.style.display = "";
+                view.classList.toggle("active", view.id === "landingPage");
+            });
+
+            customerPortalBtn.classList.remove("active");
+            adminPortalBtn.classList.remove("active");
+            adminUnlocked = false;
+
+            navButtons.forEach((button) => {
+                button.classList.remove("active");
+                const buttonPortal = button.dataset.portal;
+                button.classList.toggle("hidden", buttonPortal === "admin");
+            });
+
+            window.scrollTo({
+                top: 0,
+                behavior: "smooth"
+            });
+        }
+
+        function switchPortal(portal) {
+            const isAdmin = portal === "admin";
+            appNav.classList.remove("hidden");
+            customerPortalBtn.classList.toggle("active", !isAdmin);
+            adminPortalBtn.classList.toggle("active", isAdmin);
+
+            navButtons.forEach((button) => {
+                const buttonPortal = button.dataset.portal;
+                const shouldHide = buttonPortal && buttonPortal !== portal && buttonPortal !== "both";
+                button.classList.toggle("hidden", shouldHide);
+            });
+
+            showPage(isAdmin ? "dashboardPage" : "startPage");
+        }
+
+        function openAdminPasswordModal() {
+    adminPasswordModal.classList.remove("hidden");
+    document.body.style.overflow = "hidden";  /* prevent scrolling behind modal */
+
+    // Reset input
+    adminPasswordInput.value = "";
+    adminPasswordInput.type = "password";
+    adminPasswordInput.placeholder = "Enter admin password";
+    adminPasswordInput.style.borderColor = "";
+
+    toggleAdminPasswordBtn.setAttribute("aria-label", "Show password");
+
+    setTimeout(() => {
+        adminPasswordInput.focus();
+    }, 100);  /* small delay to ensure modal is rendered */
+}
+
+        function closeAdminPasswordModal() {
+            adminPasswordModal.classList.add("hidden");
+            adminPasswordInput.blur();
+            document.body.style.overflow = "auto";  /* restore scrolling */
+        }
+
+        function unlockAdminPortal() {
+
+    if (adminPasswordInput.value !== adminPassword) {
+
+        // Clear input
+        adminPasswordInput.value = "";
+
+        // Show error INSIDE input (visible)
+        adminPasswordInput.placeholder = "Incorrect password ❌";
+
+        // Red border for feedback
+        adminPasswordInput.style.borderColor = "red";
+
+        // Focus again
+        adminPasswordInput.focus();
+
+        return;
+    }
+
+    // Reset styles if correct
+    adminPasswordInput.style.borderColor = "";
+
+    adminUnlocked = true;
+    closeAdminPasswordModal();
+    showFlash("Admin portal unlocked.");
+    switchPortal("admin");
+}
+        function loadSessions() {
+            try {
+                const saved = localStorage.getItem(storageKey);
+                return saved ? JSON.parse(saved) : [];
+            } catch (error) {
+                return [];
+            }
+        }
+
+        function saveSessions() {
+            localStorage.setItem(storageKey, JSON.stringify(chargingSessions));
+        }
+
+        function formatCurrency(amount) {
+            return "Rs " + amount.toLocaleString("en-IN", {
+                minimumFractionDigits: 0,
+                maximumFractionDigits: 2
+            });
+        }
+
+        function formatTimestamp(date) {
+            return date.toLocaleString("en-IN", {
+                day: "2-digit",
+                month: "short",
+                year: "numeric",
+                hour: "2-digit",
+                minute: "2-digit",
+                second: "2-digit"
+            });
+        }
+
+        function formatDuration(ms) {
+            const totalSeconds = Math.max(0, Math.ceil(ms / 1000));
+            const minutes = Math.floor(totalSeconds / 60);
+            const seconds = totalSeconds % 60;
+
+            if (minutes === 0) {
+                return seconds + " sec";
+            }
+
+            return minutes + " min " + seconds + " sec";
+        }
+
+        function formatContactNumber(contactNumber) {
+            const digits = String(contactNumber || "").replace(/\D/g, "").slice(-10);
+            return digits ? "+91 " + digits : "-";
+        }
+
+        function getSessionPlan(session) {
+            return {
+                units: Number(session.plannedUnits ?? session.units) || 0,
+                totalCost: Number(session.plannedTotalCost ?? session.totalCost) || 0,
+                duration: Number(session.plannedDuration ?? session.duration) || 0
+            };
+        }
+
+        function getChargeElapsed(session, atTime = Date.now()) {
+            const plan = getSessionPlan(session);
+            const endTime = Number(session.cancelledAt || session.endTime || session.completedAt || atTime);
+
+            if (!session.startTime || !plan.duration) {
+                return 0;
+            }
+
+            return Math.min(Math.max(0, endTime - session.startTime), plan.duration);
+        }
+
+        function syncBillableCharge(session, atTime = Date.now()) {
+            const plan = getSessionPlan(session);
+            const elapsed = getChargeElapsed(session, atTime);
+            const ratio = plan.duration > 0 ? Math.min(1, elapsed / plan.duration) : 0;
+
+            session.units = plan.units * ratio;
+            session.totalCost = plan.totalCost * ratio;
+            session.billableDuration = elapsed;
+        }
+
+        function getIdleStartTime(session) {
+            const plan = getSessionPlan(session);
+
+            if (!session.startTime || !plan.duration) {
+                return 0;
+            }
+
+            return session.startTime + plan.duration + idleGracePeriod;
+        }
+
+        function getIdleTiming(session) {
+            const idleStartTime = getIdleStartTime(session);
+            const now = Date.now();
+            const graceRemaining = Math.max(0, idleStartTime - now);
+            const billableIdleTime = Math.max(0, now - idleStartTime);
+
+            return {
+                graceRemaining,
+                billableIdleTime
+            };
+        }
+
+        function getIdleFeeText() {
+            return "Rs " + idleFeeRate + "/min after " + Math.round(idleGracePeriod / 60000) + " min";
+        }
+
+        function getCompletionMessage() {
+            return "VEHICLE CHARGING IS COMPLETED. KINDLY MOVE YOUR VEHICLE FROM PARKING BAY IN NEXT "
+                + Math.round(idleGracePeriod / 60000)
+                + " MINUTES TO AVOID IDLE FEES OF Rs "
+                + idleFeeRate
+                + " PER MINUTE.";
+        }
+
+        function loadAdminSettings() {
+            try {
+                const saved = JSON.parse(localStorage.getItem(settingsKey) || "{}");
+                chargingRates = { ...defaultChargingRates, ...(saved.chargingRates || {}) };
+                chargerDurations = { ...defaultChargerDurations, ...(saved.chargerDurations || {}) };
+                idleFeeRate = Number(saved.idleFeeRate ?? 3);
+                idleGracePeriod = Number(saved.idleGracePeriod ?? 10 * 60 * 1000);
+            } catch (error) {
+                chargingRates = { ...defaultChargingRates };
+                chargerDurations = { ...defaultChargerDurations };
+                idleFeeRate = 3;
+                idleGracePeriod = 10 * 60 * 1000;
+            }
+        }
+
+        function saveAdminSettings() {
+            localStorage.setItem(settingsKey, JSON.stringify({
+                chargingRates,
+                chargerDurations,
+                idleFeeRate,
+                idleGracePeriod
+            }));
+        }
+
+        function populateAdminSettingsForm() {
+            rateACInput.value = chargingRates["AC Slow"];
+            rateDCInput.value = chargingRates["DC Fast"];
+            rateSuperInput.value = chargingRates["Super Fast"];
+            durationACInput.value = Math.round(chargerDurations["AC Slow"] / 1000);
+            durationDCInput.value = Math.round(chargerDurations["DC Fast"] / 1000);
+            durationSuperInput.value = Math.round(chargerDurations["Super Fast"] / 1000);
+            idleFeeRateInput.value = idleFeeRate;
+            gracePeriodInput.value = Math.round(idleGracePeriod / 60000);
+        }
+
+        function getChargeMode() {
+            const selectedMode = Array.from(chargeModeInputs).find((input) => input.checked);
+            return selectedMode ? selectedMode.value : "time";
+        }
+
+        function updateModeInputs() {
+            const mode = getChargeMode();
+
+            modeInputGroups.forEach((group) => {
+                group.classList.toggle("hidden", group.dataset.modeInput !== mode);
+            });
+        }
+
+// Show/hide custom inputs
+if (chargeTimeInput && customTimeInput) {
+    chargeTimeInput.addEventListener("change", () => {
+        customTimeInput.classList.toggle("hidden", chargeTimeInput.value !== "custom");
+        updatePricingPreview();
+    });
+}
+
+if (unitsSelect && unitsInput) {
+    unitsSelect.addEventListener("change", () => {
+        unitsInput.classList.toggle("hidden", unitsSelect.value !== "custom");
+        updatePricingPreview();
+    });
+}
+
+if (amountSelect && chargeAmountInput) {
+    amountSelect.addEventListener("change", () => {
+        chargeAmountInput.classList.toggle("hidden", amountSelect.value !== "custom");
+        updatePricingPreview();
+    });
+}
+
+        function getFormPricing() {
+    const chargerType = chargerTypeInput.value;
+    const mode = getChargeMode();
+    const pricePerUnit = chargingRates[chargerType];
+    const timePerUnit = chargerDurations[chargerType];
+
+    let units = 0;
+    let totalCost = 0;
+    let duration = 0;
+
+    // BY TIME
+    if (mode === "time") {
+        let timeValue = chargeTimeInput.value === "custom"
+            ? Number(customTimeInput.value)
+            : Number(chargeTimeInput.value);
+
+        duration = timeValue * 60 * 1000;
+        units = duration / timePerUnit;
+        totalCost = units * pricePerUnit;
+    }
+
+    // BY UNITS
+    if (mode === "units") {
+        units = unitsSelect.value === "custom"
+            ? Number(unitsInput.value)
+            : Number(unitsSelect.value);
+
+        totalCost = units * pricePerUnit;
+        duration = units * timePerUnit;
+    }
+
+    // BY AMOUNT
+    if (mode === "amount") {
+        totalCost = amountSelect.value === "custom"
+            ? Number(chargeAmountInput.value)
+            : Number(amountSelect.value);
+
+        units = totalCost / pricePerUnit;
+        duration = units * timePerUnit;
+    }
+
+    return {
+        mode,
+        chargerType,
+        units,
+        pricePerUnit,
+        totalCost,
+        duration
+    };
+}
+        
+
+        function updatePricingPreview() {
+            const pricing = getFormPricing();
+            previewUnits.textContent = (Number(pricing.units) || 0).toLocaleString("en-IN", {
+                maximumFractionDigits: 2
+            }) + " kWh";
+            previewRate.textContent = formatCurrency(Number(pricing.pricePerUnit) || 0);
+            previewTotal.textContent = formatCurrency(Number(pricing.totalCost) || 0);
+            previewDuration.textContent = formatDuration(Number(pricing.duration) || 0);
+        }
+
+        function addSession(session) {
+            chargingSessions.unshift(session);
+            saveSessions();
+            renderSessions();
+            renderPaymentSummary(session);
+        }
+
+        function deleteSession(id) {
+            if (!confirm("Delete this session?")) {
+                return;
+            }
+
+            const sessionIndex = chargingSessions.findIndex((session) => session.id === id);
+
+            if (sessionIndex !== -1) {
+                chargingSessions.splice(sessionIndex, 1);
+
+                if (activeSessionId === id) {
+                    stopSimulationTimer();
+                    activeSessionId = null;
+                    localStorage.removeItem(activeSessionKey);
+                    resetSimulationView();
+                }
+
+                saveSessions();
+                renderSessions();
+                renderPaymentSummary();
+                showFlash("Session deleted successfully.");
+            }
+        }
+
+        function calculateRevenue() {
+            return chargingSessions.reduce((sum, session) => sum + (Number(session.totalCost) || 0) + calculateIdleFee(session), 0);
+        }
+
+        function calculateUsedDuration(session) {
+            if (!session.startTime) {
+                return 0;
+            }
+
+            return getChargeElapsed(session);
+        }
+
+        function calculateTotalUnits() {
+            return chargingSessions.reduce((sum, session) => {
+                if (!session.endTime && session.status !== "cancelled") {
+                    syncBillableCharge(session);
+                }
+
+                return sum + (Number(session.units) || 0);
+            }, 0);
+        }
+
+        function calculateTotalChargerTime() {
+            return chargingSessions.reduce((sum, session) => sum + calculateUsedDuration(session), 0);
+        }
+
+        function calculateTotalIdleFees() {
+            return chargingSessions.reduce((sum, session) => sum + calculateIdleFee(session), 0);
+        }
+
+        function calculateIdleFee(session) {
+            if (!session.startTime || session.status === "cancelled") {
+                return 0;
+            }
+
+            const idleStartTime = getIdleStartTime(session);
+            const idleEndTime = Number(session.movedAt || Date.now());
+            const elapsedAfterCharging = idleEndTime - idleStartTime;
+
+            if (elapsedAfterCharging <= 0) {
+                return 0;
+            }
+
+            return Math.ceil(elapsedAfterCharging / 60000) * idleFeeRate;
+        }
+
+        function getBillSession(preferredSession) {
+            if (preferredSession) {
+                return preferredSession;
+            }
+
+            if (activeSessionId) {
+                const activeSession = chargingSessions.find((session) => session.id === activeSessionId);
+
+                if (activeSession) {
+                    return activeSession;
+                }
+            }
+
+            return chargingSessions[0];
+        }
+
+        function renderPaymentSummary(preferredSession) {
+            const session = getBillSession(preferredSession);
+
+            if (!session) {
+                billCustomer.textContent = "-";
+                billVehicle.textContent = "-";
+                billContact.textContent = "-";
+                billCharger.textContent = "-";
+                billUnits.textContent = "-";
+                billChargingAmount.textContent = "Rs 0";
+                billIdleFee.textContent = "Rs 0";
+                billTotal.textContent = "Rs 0";
+                return;
+            }
+
+            if (!session.endTime && session.status !== "cancelled") {
+                syncBillableCharge(session);
+            }
+
+            const idleFee = calculateIdleFee(session);
+            const pricePerUnit = session.pricePerUnit || chargingRates[session.chargerType] || 0;
+            billCustomer.textContent = session.name;
+            billVehicle.textContent = session.vehicleNumber;
+            billContact.textContent = formatContactNumber(session.contactNumber);
+            billCharger.textContent = session.chargerType + " @ " + formatCurrency(pricePerUnit) + "/kWh";
+            billUnits.textContent = Number(session.units).toLocaleString("en-IN", {
+                maximumFractionDigits: 2
+            }) + " kWh";
+            billChargingAmount.textContent = formatCurrency(session.totalCost);
+            billIdleFee.textContent = formatCurrency(idleFee);
+            billTotal.textContent = formatCurrency(session.totalCost + idleFee);
+        }
+
+        function getComputedSessionState(session) {
+            if (session.status === "cancelled") {
+                return {
+                    status: "cancelled",
+                    progress: getSessionPlan(session).duration
+                        ? Math.min(100, (getChargeElapsed(session) / getSessionPlan(session).duration) * 100)
+                        : 0,
+                    remaining: 0
+                };
+            }
+
+            if (session.movedAt || session.status === "finalized") {
+                return {
+                    status: "finalized",
+                    progress: 100,
+                    remaining: 0
+                };
+            }
+
+            const plan = getSessionPlan(session);
+
+            if (!session.startTime || !plan.duration) {
+                return {
+                    status: session.status || "completed",
+                    progress: 100,
+                    remaining: 0
+                };
+            }
+
+            const elapsed = Date.now() - session.startTime;
+            const remaining = plan.duration - elapsed;
+            const progress = Math.min(100, Math.max(0, (elapsed / plan.duration) * 100));
+            let status = "charging";
+
+            if (remaining <= 0) {
+                const idleTime = Math.abs(remaining);
+                status = idleTime > idleGracePeriod ? "idle" : "completed";
+            } else if (remaining <= 5000) {
+                status = "almost_complete";
+            }
+
+            return {
+                status,
+                progress,
+                remaining: Math.max(0, remaining)
+            };
+        }
+
+        function getStatusLabel(status) {
+            const labels = {
+                charging: "Charging",
+                almost_complete: "Almost Complete",
+                completed: "Completed",
+                idle: "Idle",
+                cancelled: "Cancelled",
+                finalized: "Vehicle Moved"
+            };
+
+            return labels[status] || "Completed";
+        }
+
+        function renderSessions() {
+            const searchText = searchLogInput.value.trim().toLowerCase();
+            const filteredSessions = chargingSessions.filter((session) => {
+                const haystack = [
+                    session.name,
+                    session.vehicleNumber,
+                    session.contactNumber,
+                    session.chargerType,
+                    session.status
+                ].join(" ").toLowerCase();
+
+                return haystack.includes(searchText);
+            });
+
+            totalSessions.textContent = chargingSessions.length;
+            totalRevenue.textContent = formatCurrency(calculateRevenue());
+            totalUnitsUsed.textContent = calculateTotalUnits().toLocaleString("en-IN", {
+                maximumFractionDigits: 2
+            }) + " kWh";
+            totalChargerTime.textContent = formatDuration(calculateTotalChargerTime());
+            totalIdleFees.textContent = formatCurrency(calculateTotalIdleFees());
+            renderPaymentSummary();
+            sessionTableBody.replaceChildren();
+
+            if (filteredSessions.length === 0) {
+                const row = document.createElement("tr");
+                const cell = document.createElement("td");
+                cell.colSpan = 9;
+                cell.className = "empty-state";
+                cell.textContent = chargingSessions.length === 0
+                    ? "No charging sessions yet. Start one from the form above."
+                    : "No sessions match your search.";
+                row.appendChild(cell);
+                sessionTableBody.appendChild(row);
+                return;
+            }
+
+            filteredSessions.forEach((session) => {
+                const computed = getComputedSessionState(session);
+                session.status = computed.status;
+                if (!session.endTime && computed.status !== "cancelled") {
+                    syncBillableCharge(session);
+                }
+
+                const row = document.createElement("tr");
+                const idleFee = calculateIdleFee(session);
+                const values = [
+                    session.name,
+                    session.vehicleNumber,
+                    formatContactNumber(session.contactNumber),
+                    session.chargerType,
+                    Number(session.units).toLocaleString("en-IN", { maximumFractionDigits: 2 }) + " kWh",
+                    formatCurrency((Number(session.totalCost) || 0) + idleFee)
+                ];
+
+                values.forEach((value) => {
+                    const cell = document.createElement("td");
+                    cell.textContent = value;
+                    row.appendChild(cell);
+                });
+
+                const statusCell = document.createElement("td");
+                const statusPill = document.createElement("span");
+                statusPill.className = "table-status";
+                statusPill.textContent = getStatusLabel(computed.status);
+                statusCell.appendChild(statusPill);
+                row.appendChild(statusCell);
+
+                const timeCell = document.createElement("td");
+                timeCell.textContent = session.timestamp;
+                row.appendChild(timeCell);
+
+                const actionCell = document.createElement("td");
+                const deleteButton = document.createElement("button");
+                deleteButton.className = "delete-btn";
+                deleteButton.type = "button";
+                deleteButton.dataset.id = session.id;
+                deleteButton.textContent = "Delete";
+                actionCell.appendChild(deleteButton);
+                row.appendChild(actionCell);
+
+                sessionTableBody.appendChild(row);
+            });
+        }
+
+        function showFlash(message) {
+            flashMessage.textContent = message;
+            flashMessage.classList.remove("hidden");
+
+            if (flashTimer) {
+                clearTimeout(flashTimer);
+            }
+
+            flashTimer = setTimeout(() => {
+                flashMessage.classList.add("hidden");
+            }, 3500);
+        }
+
+        function setBadge(status) {
+            const styles = {
+                waiting: ["Waiting", "rgba(255, 209, 102, 0.16)", "#ffd166"],
+                charging: ["Charging", "rgba(66, 223, 134, 0.16)", "#9bffbe"],
+                almost_complete: ["Almost Complete", "rgba(255, 209, 102, 0.18)", "#ffd166"],
+                completed: ["Complete", "rgba(118, 214, 255, 0.16)", "#b8ecff"],
+                idle: ["Idle", "rgba(255, 115, 115, 0.16)", "#ffd1d1"]
+                ,finalized: ["Moved", "rgba(118, 214, 255, 0.16)", "#b8ecff"]
+            };
+            const style = styles[status] || styles.waiting;
+            statusBadge.textContent = style[0];
+            statusBadge.style.background = style[1];
+            statusBadge.style.color = style[2];
+        }
+
+        function stopSimulationTimer() {
+            if (currentSimulation) {
+                clearInterval(currentSimulation);
+                currentSimulation = null;
+            }
+        }
+
+        function resetSimulationView() {
+            stopSimulationTimer();
+            progressFill.style.width = "0%";
+            progressText.textContent = "0% | 0s left";
+            setBadge("waiting");
+            stationStatus.textContent = "Ready";
+            sessionCaption.textContent = "No active charging session yet.";
+            statusMessage.textContent = "Charging station is ready for the next customer.";
+            liveCustomer.textContent = "-";
+            liveVehicle.textContent = "-";
+            liveContact.textContent = "-";
+            liveCharger.textContent = "-";
+            liveCost.textContent = "Rs 0";
+            liveIdleFee.textContent = getIdleFeeText();
+            cancelBtn.classList.add("hidden");
+            vehicleMovedBtn.classList.add("hidden");
+        }
+
+        function updateLiveSession(session) {
+            const computed = getComputedSessionState(session);
+            session.status = computed.status;
+            if (!session.endTime && computed.status !== "cancelled") {
+                syncBillableCharge(session);
+            }
+
+            const idleFee = calculateIdleFee(session);
+            const idleTiming = getIdleTiming(session);
+            progressFill.style.width = computed.progress.toFixed(0) + "%";
+            progressText.textContent = computed.progress.toFixed(0) + "% | " + formatDuration(computed.remaining) + " left";
+            setBadge(computed.status);
+            stationStatus.textContent = getStatusLabel(computed.status);
+
+            liveCustomer.textContent = session.name;
+            liveVehicle.textContent = session.vehicleNumber;
+            liveContact.textContent = formatContactNumber(session.contactNumber);
+            liveCharger.textContent = session.chargerType;
+            liveCost.textContent = formatCurrency((Number(session.totalCost) || 0) + idleFee);
+            liveIdleFee.textContent = idleFee > 0 ? formatCurrency(idleFee) + " running" : getIdleFeeText();
+            cancelBtn.classList.toggle("hidden", computed.status !== "charging" && computed.status !== "almost_complete");
+            vehicleMovedBtn.classList.toggle("hidden", computed.status !== "completed" && computed.status !== "idle");
+
+            if (computed.status === "charging") {
+                sessionCaption.textContent = "Charging session is active for " + session.name + ".";
+                statusMessage.textContent = "Charging in progress...";
+            }
+
+            if (computed.status === "almost_complete") {
+                sessionCaption.textContent = session.name + "'s charging session is almost complete.";
+                statusMessage.textContent = "Charging is about to complete.";
+
+                if (!almostCompleteNotified) {
+                    almostCompleteNotified = true;
+                    showFlash("Charging is almost complete for " + session.vehicleNumber + ".");
+                }
+            }
+
+            if (computed.status === "completed") {
+                sessionCaption.textContent = session.name + "'s charging session finished successfully.";
+                progressText.textContent = "100% | free idle: " + formatDuration(idleTiming.graceRemaining);
+                liveIdleFee.textContent = "Free idle time left: " + formatDuration(idleTiming.graceRemaining);
+                statusMessage.textContent = "Charging complete. Idle fees start after the free countdown unless Vehicle Moved is pressed.";
+
+                if (!completedNotified) {
+                    completedNotified = true;
+                    session.completionAlerted = true;
+                    showFlash(getCompletionMessage());
+                    alert(getCompletionMessage());
+                }
+            }
+
+            if (computed.status === "idle") {
+                sessionCaption.textContent = session.name + "'s vehicle is idle after completion.";
+                progressText.textContent = "100% | idle: " + formatDuration(idleTiming.billableIdleTime);
+                liveIdleFee.textContent = formatCurrency(idleFee) + " running";
+                statusMessage.textContent = "Idle fee is running. Press Vehicle Moved / Final Bill when the bay is cleared.";
+            }
+
+            if (computed.status === "finalized") {
+                sessionCaption.textContent = session.name + "'s vehicle has moved and billing is finalized.";
+                statusMessage.textContent = "Final bill is locked for this session.";
+            }
+
+            saveSessions();
+            renderSessions();
+            renderPaymentSummary(session);
+        }
+
+        function startChargingSimulation(session) {
+            stopSimulationTimer();
+            activeSessionId = session.id;
+            localStorage.setItem(activeSessionKey, session.id);
+            almostCompleteNotified = false;
+            completedNotified = session.completionAlerted === true;
+            updateLiveSession(session);
+
+            currentSimulation = setInterval(() => {
+                const activeSession = chargingSessions.find((item) => item.id === activeSessionId);
+
+                if (!activeSession) {
+                    resetSimulationView();
+                    localStorage.removeItem(activeSessionKey);
+                    return;
+                }
+
+                updateLiveSession(activeSession);
+            }, 1000);
+        }
+
+        function clearForm() {
+            customerNameInput.value = "";
+            contactNumberInput.value = "";
+            vehicleNumberInput.value = "";
+            chargerTypeInput.value = "AC Slow";
+            chargeTimeInput.value = "15";
+            customTimeInput.value = "";
+            unitsSelect.value = "5";
+            unitsInput.value = "";
+            amountSelect.value = "50";
+            chargeAmountInput.value = "";
+            chargeModeInputs.forEach((input) => {
+                input.checked = input.value === "time";
+            });
+            updateModeInputs();
+            customTimeInput.classList.add("hidden");
+            unitsInput.classList.add("hidden");
+            chargeAmountInput.classList.add("hidden");
+            updatePricingPreview();
+        }
+
+        function cancelActiveSession() {
+            if (!activeSessionId) {
+                resetSimulationView();
+                return;
+            }
+
+            const activeSession = chargingSessions.find((session) => session.id === activeSessionId);
+
+            if (activeSession) {
+                syncBillableCharge(activeSession);
+                activeSession.status = "cancelled";
+                activeSession.cancelledAt = Date.now();
+                activeSession.endTime = activeSession.cancelledAt;
+            }
+
+            stopSimulationTimer();
+            activeSessionId = null;
+            localStorage.removeItem(activeSessionKey);
+            saveSessions();
+            renderSessions();
+            renderPaymentSummary();
+            resetSimulationView();
+            showFlash("Active charging session cancelled.");
+        }
+
+        function markVehicleMoved() {
+            if (!activeSessionId) {
+                showFlash("No active bay session to finalize.");
+                return;
+            }
+
+            const activeSession = chargingSessions.find((session) => session.id === activeSessionId);
+
+            if (!activeSession) {
+                resetSimulationView();
+                return;
+            }
+
+            syncBillableCharge(activeSession);
+            activeSession.movedAt = Date.now();
+            activeSession.endTime = activeSession.movedAt;
+            activeSession.status = "finalized";
+            stopSimulationTimer();
+            activeSessionId = null;
+            localStorage.removeItem(activeSessionKey);
+            saveSessions();
+            updateLiveSession(activeSession);
+            renderSessions();
+            renderPaymentSummary(activeSession);
+            showFlash("Vehicle moved. Final bill is locked.");
+        }
+
+        chargingForm.addEventListener("submit", (event) => {
+            event.preventDefault();
+
+            const name = customerNameInput.value.trim();
+            const contactNumber = contactNumberInput.value.trim();
+            const vehicleNumber = vehicleNumberInput.value.trim().toUpperCase().replace(/[\s-]/g, "");
+            const pricing = getFormPricing();
+
+            if (!name) {
+                showFlash("Please enter customer name.");
+                return;
+            }
+
+            if (!contactRegex.test(contactNumber)) {
+                showFlash("Enter a valid 10 digit contact number.");
+                return;
+            }
+
+            if (!vehicleRegex.test(vehicleNumber)) {
+                showFlash("Enter vehicle number in format like GJ18YP0708.");
+                return;
+            }
+
+            if (pricing.units <= 0 || pricing.totalCost <= 0 || pricing.duration <= 0) {
+                showFlash("Please enter a valid charging value.");
+                return;
+            }
+
+            if (currentSimulation) {
+                stopSimulationTimer();
+            }
+
+            const session = {
+                id: "session-" + Date.now(),
+                name: name,
+                contactNumber: contactNumber,
+                vehicleNumber: vehicleNumber,
+                chargeMode: pricing.mode,
+                chargerType: pricing.chargerType,
+                units: pricing.units,
+                plannedUnits: pricing.units,
+                pricePerUnit: pricing.pricePerUnit,
+                totalCost: pricing.totalCost,
+                plannedTotalCost: pricing.totalCost,
+                status: "charging",
+                startTime: Date.now(),
+                duration: pricing.duration,
+                plannedDuration: pricing.duration,
+                timestamp: formatTimestamp(new Date())
+            };
+
+            addSession(session);
+            startChargingSimulation(session);
+            showPage("livePage");
+            showFlash("Charging session started successfully.");
+            clearForm();
+        });
+
+        resetBtn.addEventListener("click", () => {
+            clearForm();
+            showFlash("Form has been reset.");
+        });
+
+        cancelBtn.addEventListener("click", cancelActiveSession);
+        vehicleMovedBtn.addEventListener("click", markVehicleMoved);
+
+        customerPortalBtn.addEventListener("click", () => {
+            switchPortal("customer");
+        });
+
+        adminPortalBtn.addEventListener("click", () => {
+            if (!adminUnlocked) {
+                openAdminPasswordModal();
+                return;
+            }
+
+            switchPortal("admin");
+        });
+
+        toggleAdminPasswordBtn.addEventListener("click", () => {
+            const shouldShow = adminPasswordInput.type === "password";
+            adminPasswordInput.type = shouldShow ? "text" : "password";
+            toggleAdminPasswordBtn.setAttribute("aria-label", shouldShow ? "Hide password" : "Show password");
+        });
+
+        confirmAdminPasswordBtn.addEventListener("click", unlockAdminPortal);
+        cancelAdminPasswordBtn.addEventListener("click", closeAdminPasswordModal);
+
+        adminPasswordInput.addEventListener("keydown", (event) => {
+            if (event.key === "Enter") {
+                unlockAdminPortal();
+            }
+            if (event.key === "Escape") {
+                closeAdminPasswordModal();
+            }
+        });
+
+        adminPasswordModal.addEventListener("click", (event) => {
+            if (event.target === adminPasswordModal) {
+                closeAdminPasswordModal();
+            }
+        });
+
+        adminSettingsForm.addEventListener("submit", (event) => {
+            event.preventDefault();
+
+            chargingRates = {
+                "AC Slow": Number(rateACInput.value) || defaultChargingRates["AC Slow"],
+                "DC Fast": Number(rateDCInput.value) || defaultChargingRates["DC Fast"],
+                "Super Fast": Number(rateSuperInput.value) || defaultChargingRates["Super Fast"]
+            };
+
+            chargerDurations = {
+                "AC Slow": (Number(durationACInput.value) || defaultChargerDurations["AC Slow"] / 1000) * 1000,
+                "DC Fast": (Number(durationDCInput.value) || defaultChargerDurations["DC Fast"] / 1000) * 1000,
+                "Super Fast": (Number(durationSuperInput.value) || defaultChargerDurations["Super Fast"] / 1000) * 1000
+            };
+
+            idleFeeRate = Number(idleFeeRateInput.value) || 0;
+            idleGracePeriod = (Number(gracePeriodInput.value) || 10) * 60 * 1000;
+            saveAdminSettings();
+            updatePricingPreview();
+            renderSessions();
+            liveIdleFee.textContent = getIdleFeeText();
+            showFlash("Admin settings saved.");
+        });
+
+        resetSettingsBtn.addEventListener("click", () => {
+            chargingRates = { ...defaultChargingRates };
+            chargerDurations = { ...defaultChargerDurations };
+            idleFeeRate = 3;
+            idleGracePeriod = 10 * 60 * 1000;
+            saveAdminSettings();
+            populateAdminSettingsForm();
+            updatePricingPreview();
+            renderSessions();
+            liveIdleFee.textContent = getIdleFeeText();
+            showFlash("Admin settings reset to defaults.");
+        });
+
+        navButtons.forEach((button) => {
+            button.addEventListener("click", () => {
+                if (!button.dataset.page) {
+                    return;
+                }
+
+                if (button.dataset.page === "paymentPage") {
+                    renderPaymentSummary();
+                }
+
+                showPage(button.dataset.page);
+            });
+        });
+
+        sessionTableBody.addEventListener("click", (event) => {
+            const deleteButton = event.target.closest(".delete-btn");
+
+            if (!deleteButton) {
+                return;
+            }
+
+            deleteSession(deleteButton.dataset.id);
+        });
+
+        chargerTypeInput.addEventListener("change", updatePricingPreview);
+        chargeTimeInput.addEventListener("change", updatePricingPreview);
+        customTimeInput.addEventListener("input", updatePricingPreview);
+        unitsSelect.addEventListener("change", updatePricingPreview);
+        unitsInput.addEventListener("input", updatePricingPreview);
+        amountSelect.addEventListener("change", updatePricingPreview);
+        chargeAmountInput.addEventListener("input", updatePricingPreview);
+        contactNumberInput.addEventListener("input", () => {
+            contactNumberInput.value = contactNumberInput.value.replace(/\D/g, "").slice(0, 10);
+        });
+        chargeModeInputs.forEach((input) => {
+            input.addEventListener("change", () => {
+                updateModeInputs();
+                updatePricingPreview();
+            });
+        });
+        searchLogInput.addEventListener("input", renderSessions);
+
+        loadAdminSettings();
+        populateAdminSettingsForm();
+        updateModeInputs();
+        updatePricingPreview();
+        renderSessions();
+        renderPaymentSummary();
+        resetSimulationView();
+
+        if (activeSessionId) {
+            const savedActiveSession = chargingSessions.find((session) => session.id === activeSessionId);
+
+            if (savedActiveSession) {
+                const savedState = getComputedSessionState(savedActiveSession);
+
+                if (savedState.status !== "cancelled" && savedState.status !== "finalized") {
+                    startChargingSimulation(savedActiveSession);
+                } else {
+                    savedActiveSession.status = savedState.status;
+                    activeSessionId = null;
+                    localStorage.removeItem(activeSessionKey);
+                    saveSessions();
+                    renderSessions();
+                    renderPaymentSummary(savedActiveSession);
+                }
+            } else {
+                activeSessionId = null;
+                localStorage.removeItem(activeSessionKey);
+            }
+        }
+        });
+    </script>
+</body>
+</html>
